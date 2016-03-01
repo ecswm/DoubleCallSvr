@@ -18,22 +18,28 @@ namespace HTTP2RPCServer
 		//校验身份
 		public static bool DecodeSigParams(string sigparams,string authorization)
 		{
-			string authorstring = System.Text.Encoding.Default.GetString (Convert.FromBase64String (authorization));
-			string[] outstring = authorstring.Split (':');
-
-			MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
-			byte[] md5hash = md5.ComputeHash (System.Text.Encoding.UTF8.GetBytes (outstring [0] + keymap[outstring[0]] + outstring [1]));
-
-			StringBuilder md5string = new StringBuilder();
-			foreach (byte b in md5hash)
-				md5string.Append(b.ToString("X2"));
-
 			bool ret = false;
-			if (sigparams == md5string.ToString()) {
-				DateTime requesttime = DateTime.ParseExact (outstring [1], "yyyyMMddHHmmss", System.Globalization.CultureInfo.CurrentCulture);
-				//当前时间与httprequest调用时间相差小于keeplived
-				if (DateTime.Now.Subtract (requesttime).TotalSeconds <= keeplived)
-					ret = true;
+			try
+			{
+				string authorstring = System.Text.Encoding.Default.GetString (Convert.FromBase64String (authorization));
+				string[] outstring = authorstring.Split (':');
+
+				MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
+				byte[] md5hash = md5.ComputeHash (System.Text.Encoding.UTF8.GetBytes (outstring [0] + keymap[outstring[0]] + outstring [1]));
+
+				StringBuilder md5string = new StringBuilder();
+				foreach (byte b in md5hash)
+					md5string.Append(b.ToString("X2"));
+
+				if (sigparams == md5string.ToString()) {
+					DateTime requesttime = DateTime.ParseExact (outstring [1], "yyyyMMddHHmmss", System.Globalization.CultureInfo.CurrentCulture);
+					//当前时间与httprequest调用时间相差小于keeplived
+					if (DateTime.Now.Subtract (requesttime).TotalSeconds <= keeplived)
+						ret = true;
+				}
+			}
+			catch(Exception ex) {
+				
 			}
 			return ret;
 		}
@@ -41,6 +47,7 @@ namespace HTTP2RPCServer
 		//获取用户名和secret_key对应关系
 		public static void InitSecretKey()
 		{
+			Logger.Debug ("Tools", "InitSecretKey", "init secretkey");
 			StreamReader sr = new StreamReader ("key.ini");
 			String keystring;
 			while ((keystring = sr.ReadLine ())!=null) {

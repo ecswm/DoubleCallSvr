@@ -33,7 +33,7 @@ namespace HTTP2RPCServer
 		{
 			HttpListenerContext ctx = context as HttpListenerContext;
 			BaseFsApp fsapp = null;
-
+			Byte[] rsp = null;
 			if (Tools.DecodeSigParams (ctx.Request.QueryString ["SigParameter"], ctx.Request.Headers ["Authorization"])) {
 				if (ctx.Request.Url.AbsolutePath.Contains ("DoubleCall")) {
 					fsapp = new DoubleCallApp (ctx, "DoubleCallApp");
@@ -44,7 +44,7 @@ namespace HTTP2RPCServer
 				return;
 			}
 			ctx.Response.StatusCode = 503;
-			ctx.Response.OutputStream.Write ("", 0, 0);
+			ctx.Response.OutputStream.Write (rsp, 0, 0);
 			ctx.Response.OutputStream.Close ();
 		}
 

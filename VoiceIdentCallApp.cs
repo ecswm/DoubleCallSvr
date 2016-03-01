@@ -24,6 +24,12 @@ namespace HTTP2RPCServer
 		{
 		}
 
+		public override Byte[] GenerateJson(String callid,String errcode,String msg)
+		{
+			VoiceIdentCallAppResponse rsp = new VoiceIdentCallAppResponse (callid,errcode,msg);
+			return System.Text.Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject (rsp));
+		}
+
 		public override void Execute()
 		{
 			Logger.Debug("RPCThread","InvokeFs",
@@ -39,7 +45,7 @@ namespace HTTP2RPCServer
 				if (Ctx.Request.QueryString["called_number"] == null||
 					Ctx.Request.QueryString["ident_code"] == null||
 					Ctx.Request.QueryString["app_key"] == null) {
-					Result = Tools.GenerateJson ("", "404", "params can not empty");
+					Result = GenerateJson ("", "404", "params can not empty");
 					return;
 				}
 				String[] ret = PythonEnginer.VoiceIdentCall (Ctx.Request.QueryString["called_number"], Ctx.Request.QueryString["ident_code"]);

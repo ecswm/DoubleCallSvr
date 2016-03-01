@@ -35,7 +35,9 @@ namespace HTTP2RPCServer
 		}
 
 		public virtual void Execute (){}
-		public virtual Byte[] GenerateJson(){}
+		public virtual Byte[] GenerateJson(String callid,String errcode,String msg){
+			return null;
+		}
 
 		public void SendResult()
 		{

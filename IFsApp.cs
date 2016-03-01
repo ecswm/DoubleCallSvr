@@ -6,7 +6,8 @@ namespace HTTP2RPCServer
 	{
 		void Execute();
 		void SendResult();
-		Byte[] GenerateJson();
+		Byte[] GenerateJson(String callid,String errcode,String msg);
+
 		String AppName{ get; set;}
 		Byte[] Result{ get; set;}
 	}

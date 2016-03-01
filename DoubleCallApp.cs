@@ -44,7 +44,7 @@ namespace HTTP2RPCServer
 				if (Ctx.Request.QueryString["caller_number"] == null||
 					Ctx.Request.QueryString["called_number"] == null||
 					Ctx.Request.QueryString["appkey"] == null) {
-					Result = Tools.GenerateJson ("", "404", "params can not empty");
+					Result = GenerateJson ("", "404", "params can not empty");
 					return;
 				}
 				String[] ret = PythonEnginer.OriginateCall (Ctx.Request.QueryString["caller_number"], Ctx.Request.QueryString["called_number"]);
