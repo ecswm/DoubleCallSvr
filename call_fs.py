@@ -5,7 +5,6 @@
 
 from xmlrpclib import ServerProxy
 
-#host = '60.190.252.45'
 host = '10.0.0.35'
 username = 'freeswitch'
 password = 'works'
