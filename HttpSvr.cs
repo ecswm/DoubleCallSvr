@@ -17,6 +17,7 @@ namespace HTTP2RPCServer
 			p.Parse(args);
 		
 			Logger.Init ();
+			Tools.InitSecretKey ();
 
 			RPCThread thread = new RPCThread ();
 			thread.Start ();
@@ -31,19 +32,20 @@ namespace HTTP2RPCServer
 		static void ProcessRequest(object context)
 		{
 			HttpListenerContext ctx = context as HttpListenerContext;
-				String app_key = ctx.Request.QueryString ["app_key"];
-				String caller_number = ctx.Request.QueryString ["caller_number"];
-				String called_number = ctx.Request.QueryString ["called_number"];
-				Logger.Info("HttpSvr","ProcessRequest",String.Format("Recive WebRequest:[app_key is {0},caller_number is {1},called_number is {2}]",
-																	 app_key,
-																	 caller_number,
-																	 called_number));
-				Queue<DoubleCallObj>.GetInstance().Enqueue(new DoubleCallObj(
-					ctx,
-				app_key,
-				caller_number,
-				called_number
-			));
+			BaseFsApp fsapp = null;
+
+			if (Tools.DecodeSigParams (ctx.Request.QueryString ["SigParameter"], ctx.Request.Headers ["Authorization"])) {
+				if (ctx.Request.Url.AbsolutePath.Contains ("DoubleCall")) {
+					fsapp = new DoubleCallApp (ctx, "DoubleCallApp");
+				} else if (ctx.Request.Url.AbsolutePath.Contains ("VoiceIdentCall")) {
+					fsapp = new VoiceIdentCallApp (ctx, "VoiceIdentCall");
+				}
+				Queue<IFsApp>.GetInstance ().Enqueue (fsapp);
+				return;
+			}
+			ctx.Response.StatusCode = 503;
+			ctx.Response.OutputStream.Write ("", 0, 0);
+			ctx.Response.OutputStream.Close ();
 		}
 
 		private HttpListener httplistener;
@@ -94,7 +96,8 @@ namespace HTTP2RPCServer
 		public void Run()
 		{
 			httplistener = new HttpListener ();
-			httplistener.Prefixes.Add (prefixes + "voicecodecall/");
+			httplistener.Prefixes.Add (prefixes + "VoiceIdentCall/");
+			httplistener.Prefixes.Add (prefixes + "DoubleCall/");
 			httplistener.Start();
 			
 			Logger.Info ("HttpSvr", "Start", "HttpSvr was Started!!!");

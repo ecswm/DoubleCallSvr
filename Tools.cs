@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Xml;
 using System.IO;
+using System.Text;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 using Newtonsoft.Json;
 using log4net;
 using log4net.Config;
@@ -8,43 +11,51 @@ using log4net.Config;
 [assembly: log4net.Config.XmlConfigurator(Watch=true)]
 namespace HTTP2RPCServer
 {
-
-	public class Result
-	{
-		public Result(String _callid,String _msg,String _errcode)
-		{
-			callid = _callid;
-			msg = _msg;
-			errcode = _errcode;
-		}
-
-		public String callid;
-		public String msg;
-		public String errcode;
-	}
-
-	public class GT_Voice_DoubleCall_Response
-	{
-		public Result result;
-		public GT_Voice_DoubleCall_Response()
-		{
-			result = null;
-		}
-	}
-
 	public static class Tools
 	{
-		public static Byte[] GenerateJson(String callid,String errcode,String msg)
+		static uint keeplived = 120;
+		static Dictionary<String,String> keymap = new Dictionary<string, string> ();
+		//校验身份
+		public static bool DecodeSigParams(string sigparams,string authorization)
 		{
-			GT_Voice_DoubleCall_Response gt_voice_doublecall_response = new GT_Voice_DoubleCall_Response ();
-			Result result = new Result (callid,msg,errcode);
-			gt_voice_doublecall_response.result = result;
+			string authorstring = System.Text.Encoding.Default.GetString (Convert.FromBase64String (authorization));
+			string[] outstring = authorstring.Split (':');
 
-			return System.Text.Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject (gt_voice_doublecall_response));
+			MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
+			byte[] md5hash = md5.ComputeHash (System.Text.Encoding.UTF8.GetBytes (outstring [0] + keymap[outstring[0]] + outstring [1]));
+
+			StringBuilder md5string = new StringBuilder();
+			foreach (byte b in md5hash)
+				md5string.Append(b.ToString("X2"));
+
+			bool ret = false;
+			if (sigparams == md5string.ToString()) {
+				DateTime requesttime = DateTime.ParseExact (outstring [1], "yyyyMMddHHmmss", System.Globalization.CultureInfo.CurrentCulture);
+				//当前时间与httprequest调用时间相差小于keeplived
+				if (DateTime.Now.Subtract (requesttime).TotalSeconds <= keeplived)
+					ret = true;
+			}
+			return ret;
 		}
-			
+
+		//获取用户名和secret_key对应关系
+		public static void InitSecretKey()
+		{
+			StreamReader sr = new StreamReader ("key.ini");
+			String keystring;
+			while ((keystring = sr.ReadLine ())!=null) {
+				try
+				{
+					keymap.Add(keystring.Split('=')[0],keystring.Split('=')[1]);
+				}
+				catch(Exception ex) {
+					continue;
+				}
+			}
+		}
+
 	}
-		
+
 	public static  class Logger
 	{
 		private static XmlDocument Log4netConfig = new XmlDocument();
