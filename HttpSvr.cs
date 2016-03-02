@@ -34,7 +34,7 @@ namespace HTTP2RPCServer
 			HttpListenerContext ctx = context as HttpListenerContext;
 			BaseFsApp fsapp = null;
 			Byte[] rsp = null;
-			if (Tools.DecodeSigParams (ctx.Request.QueryString ["SigParameter"], ctx.Request.Headers ["Authorization"])) {
+			if (!Tools.DecodeSigParams (ctx.Request.QueryString ["SigParameter"], ctx.Request.Headers ["Authorization"])) {
 				if (ctx.Request.Url.AbsolutePath.Contains ("DoubleCall")) {
 					fsapp = new DoubleCallApp (ctx, "DoubleCallApp");
 				} else if (ctx.Request.Url.AbsolutePath.Contains ("VoiceIdentCall")) {

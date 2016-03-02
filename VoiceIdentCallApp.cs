@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.IO;
 
 namespace HTTP2RPCServer
 {
@@ -18,10 +19,39 @@ namespace HTTP2RPCServer
 		static String appname = "VoiceIdentCall";
 	}
 
+	public class VoiceIdentCallAppRequest
+	{
+		public String called_number;
+		public String ident_code;
+
+		public VoiceIdentCallAppRequest(String _called_number,String _ident_code)
+		{
+			called_number = _called_number;
+			ident_code = _ident_code;
+		}
+	}
+
 	public class VoiceIdentCallApp:BaseFsApp
 	{
+	    void ParseJson(String body)
+		{
+			try{
+			    req = Newtonsoft.Json.JsonConvert.DeserializeObject<VoiceIdentCallAppRequest> (body);
+			}
+			catch(Exception ex) {
+			}
+		}
+
+		VoiceIdentCallAppRequest req;
+
 		public VoiceIdentCallApp(HttpListenerContext ctx,String appname):base(ctx,appname)
 		{
+			if (ctx.Request.HttpMethod.Equals ("POST")) {
+				ParseJson (new StreamReader (ctx.Request.InputStream).ReadToEnd ());
+			}
+			if(ctx.Request.HttpMethod.Equals("GET")){
+				req = new VoiceIdentCallAppRequest (ctx.Request.QueryString ["called_number"], ctx.Request.QueryString ["ident_code"]);
+			}
 		}
 
 		public override Byte[] GenerateJson(String callid,String errcode,String msg)
@@ -32,22 +62,16 @@ namespace HTTP2RPCServer
 
 		public override void Execute()
 		{
+			if (req == null) {
+				Logger.Fatal ("RPCThread", AppName, "Revice WebRequest Error,Cause: body is null");
+				Result = GenerateJson ("", "404", "params can not empty");
+				return;
+			}
 			Logger.Debug("RPCThread","InvokeFs",
-				String.Format("appname: {0},called_number:{1},ident_code:{2}",AppName,Ctx.Request.QueryString["called_number"],Ctx.Request.QueryString["ident_code"])
+						  String.Format("appname: {0},called_number:{1},ident_code:{2}",AppName,req.called_number,req.ident_code)
 			);
-
-			Logger.Info("HttpSvr","ProcessRequest",String.Format("Recive WebRequest:[app_key is {0},called_number is {1},ident_code is {2}]",
-				Ctx.Request.QueryString["app_key"],
-				Ctx.Request.QueryString["called_number"],
-				Ctx.Request.QueryString["ident_code"]));
 			
 			try{
-				if (Ctx.Request.QueryString["called_number"] == null||
-					Ctx.Request.QueryString["ident_code"] == null||
-					Ctx.Request.QueryString["app_key"] == null) {
-					Result = GenerateJson ("", "404", "params can not empty");
-					return;
-				}
 				String[] ret = PythonEnginer.VoiceIdentCall (Ctx.Request.QueryString["called_number"], Ctx.Request.QueryString["ident_code"]);
 				if (ret [0].ToString().Equals ("+OK")) {
 					Result = GenerateJson (ret [1].ToString (), "0", "OK");

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 
 namespace HTTP2RPCServer
@@ -18,10 +19,40 @@ namespace HTTP2RPCServer
 		static String appname = "DoubleCall";
 	}
 
+	public class DoubleCallAppRequest
+	{
+		public DoubleCallAppRequest(String _caller_number,String _called_number)
+		{
+			caller_number = _caller_number;
+			called_number = _called_number;
+		}
+
+		public String caller_number;
+		public String called_number;
+	}
+
 	public class DoubleCallApp:BaseFsApp
 	{
+		void ParseJson(String body)
+		{
+			try{
+				req = Newtonsoft.Json.JsonConvert.DeserializeObject<DoubleCallAppRequest> (body);
+			}
+			catch(Exception ex) {
+			}
+		}
+
+		DoubleCallAppRequest req;
+
 		public DoubleCallApp(HttpListenerContext ctx,String appname):base(ctx,appname)
 		{
+			req = null;
+			if (ctx.Request.HttpMethod.Equals ("POST")) {
+				 ParseJson(new StreamReader(ctx.Request.InputStream).ReadToEnd());
+			}
+			if (ctx.Request.HttpMethod.Equals ("GET")) {
+				req = new DoubleCallAppRequest (ctx.Request.QueryString ["caller_number"], ctx.Request.QueryString ["called_number"]);
+			}
 		}
 
 		public override Byte[] GenerateJson(String callid,String errcode,String msg)
@@ -32,22 +63,16 @@ namespace HTTP2RPCServer
 
 		public override void Execute()
 		{
+			if (req==null) {
+				Logger.Fatal ("RPCThread", AppName, "Revice WebRequest Error,Cause: body is null");
+				Result = GenerateJson ("", "404", "params can not empty");
+				return;
+			}
 			Logger.Debug("RPCThread","InvokeFs",
-				String.Format("appname: {0},caller_number:{1},called_number:{2}",AppName,Ctx.Request.QueryString["caller_number"],Ctx.Request.QueryString["called_number"])
+				String.Format("appname: {0},caller_number:{1},called_number:{2}",AppName,req.caller_number,req.called_number)
 			);
-
-			Logger.Info("HttpSvr","ProcessRequest",String.Format("Recive WebRequest:[app_key is {0},caller_number is {1},called_number is {2}]",
-				Ctx.Request.QueryString["app_key"],
-				Ctx.Request.QueryString["caller_number"],
-				Ctx.Request.QueryString["called_number"]));
 			try{
-				if (Ctx.Request.QueryString["caller_number"] == null||
-					Ctx.Request.QueryString["called_number"] == null||
-					Ctx.Request.QueryString["appkey"] == null) {
-					Result = GenerateJson ("", "404", "params can not empty");
-					return;
-				}
-				String[] ret = PythonEnginer.OriginateCall (Ctx.Request.QueryString["caller_number"], Ctx.Request.QueryString["called_number"]);
+				String[] ret = PythonEnginer.OriginateCall (req.caller_number,req.called_number);
 				if (ret [0].ToString().Equals ("+OK")) {
 					Result = GenerateJson (ret [1].ToString (), "0", "OK");
 				}

@@ -48,16 +48,29 @@ namespace HTTP2RPCServer
 		public static void InitSecretKey()
 		{
 			Logger.Debug ("Tools", "InitSecretKey", "init secretkey");
+			try
+			{
 			StreamReader sr = new StreamReader ("key.ini");
 			String keystring;
 			while ((keystring = sr.ReadLine ())!=null) {
-				try
-				{
 					keymap.Add(keystring.Split('=')[0],keystring.Split('=')[1]);
 				}
-				catch(Exception ex) {
-					continue;
-				}
+			}
+			catch(Exception ex)
+			{
+				Logger.Fatal ("Tools", "InitSecretKey", "read key.ini error!!!");
+			}
+		}
+
+		//解析JSON
+		public static DoubleCallAppRequest ParseJson(String body)
+		{
+			try{
+				DoubleCallAppRequest req = Newtonsoft.Json.JsonConvert.DeserializeObject<DoubleCallAppRequest> (body);
+				return req;
+			}
+			catch(Exception ex) {
+				return null;
 			}
 		}
 
