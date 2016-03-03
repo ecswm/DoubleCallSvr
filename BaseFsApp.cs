@@ -41,9 +41,15 @@ namespace HTTP2RPCServer
 
 		public void SendResult()
 		{
+			try
+			{
 			ctx.Response.OutputStream.Write (rsp, 0, rsp.Length);
 			ctx.Response.OutputStream.Close ();
 			ctx.Response.Close ();
+			}
+			catch(Exception ex) {
+			
+			}
 		}
 	}
 }

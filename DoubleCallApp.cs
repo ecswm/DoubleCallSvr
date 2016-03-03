@@ -57,7 +57,7 @@ namespace HTTP2RPCServer
 
 		public override Byte[] GenerateJson(String callid,String errcode,String msg)
 		{
-			DoubleCallAppResponse rsp = new DoubleCallAppResponse (callid,errcode,msg);
+			DoubleCallAppResponse rsp = new DoubleCallAppResponse (callid,msg,errcode);
 			return System.Text.Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject (rsp));
 		}
 

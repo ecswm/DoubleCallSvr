@@ -13,7 +13,7 @@ namespace HTTP2RPCServer
 {
 	public static class Tools
 	{
-		static uint keeplived = 120;
+		static uint keeplived = 5000;
 		static Dictionary<String,String> keymap = new Dictionary<string, string> ();
 		//校验身份
 		public static bool DecodeSigParams(string sigparams,string authorization)

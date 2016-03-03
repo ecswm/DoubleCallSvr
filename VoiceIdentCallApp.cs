@@ -56,7 +56,7 @@ namespace HTTP2RPCServer
 
 		public override Byte[] GenerateJson(String callid,String errcode,String msg)
 		{
-			VoiceIdentCallAppResponse rsp = new VoiceIdentCallAppResponse (callid,errcode,msg);
+			VoiceIdentCallAppResponse rsp = new VoiceIdentCallAppResponse (callid,msg,errcode);
 			return System.Text.Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject (rsp));
 		}
 
