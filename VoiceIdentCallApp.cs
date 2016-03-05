@@ -72,7 +72,7 @@ namespace HTTP2RPCServer
 			);
 			
 			try{
-				String[] ret = PythonEnginer.VoiceIdentCall (Ctx.Request.QueryString["called_number"], Ctx.Request.QueryString["ident_code"]);
+ 				String[] ret = PythonEnginer.VoiceIdentCall (req.called_number,req.ident_code);
 				if (ret [0].ToString().Equals ("+OK")) {
 					Result = GenerateJson (ret [1].ToString (), "0", "OK");
 				}
