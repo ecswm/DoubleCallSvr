@@ -3,6 +3,8 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Mono.Options;
+using RpcXmlClient;
+using GreenTown.GCLib;
 
 namespace HTTP2RPCServer
 {
@@ -18,6 +20,7 @@ namespace HTTP2RPCServer
 		
 			Logger.Init ();
 			Tools.InitSecretKey ();
+			Tools.InitRpcEnginer ();
 
 			RPCThread thread = new RPCThread ();
 			thread.Start ();
@@ -33,19 +36,27 @@ namespace HTTP2RPCServer
 		{
 			HttpListenerContext ctx = context as HttpListenerContext;
 			BaseFsApp fsapp = null;
-			Byte[] rsp = null;
-			if (Tools.DecodeSigParams (ctx.Request.QueryString ["SigParameter"], ctx.Request.Headers ["Authorization"])) {
-				if (ctx.Request.Url.AbsolutePath.Contains ("DoubleCall")) {
-					fsapp = new DoubleCallApp (ctx, "DoubleCallApp");
-				} else if (ctx.Request.Url.AbsolutePath.Contains ("VoiceIdentCall")) {
-					fsapp = new VoiceIdentCallApp (ctx, "VoiceIdentCall");
+			
+			try{
+				if (Tools.DecodeSigParams (ctx.Request.QueryString ["SigParameter"], ctx.Request.Headers ["Authorization"])) {
+					if (ctx.Request.Url.AbsolutePath.Contains ("DoubleCall")) {
+						fsapp = new DoubleCallApp (ctx, "DoubleCallApp");
+					} else if (ctx.Request.Url.AbsolutePath.Contains ("VoiceIdentCall")) {
+						fsapp = new VoiceIdentCallApp (ctx, "VoiceIdentCall");
+					}
+					Queue<IFsApp>.GetInstance ().Enqueue (fsapp);
+					return;
 				}
-				Queue<IFsApp>.GetInstance ().Enqueue (fsapp);
-				return;
+				ctx.Response.StatusCode = 403;
+				ctx.Response.OutputStream.Write (null, 0, 0);
+				ctx.Response.OutputStream.Close ();
 			}
-			ctx.Response.StatusCode = 403;
-			ctx.Response.OutputStream.Write (null, 0, 0);
-			ctx.Response.OutputStream.Close ();
+			catch(Exception ex) {
+					Logger.Fatal ("ProcessRequest", "CreateAppRequest", ex.Message);
+					ctx.Response.StatusCode = 403;
+					ctx.Response.OutputStream.Write (null, 0, 0);
+					ctx.Response.OutputStream.Close ();
+			}
 		}
 
 		private HttpListener httplistener;

@@ -48,7 +48,7 @@ namespace HTTP2RPCServer
 			ctx.Response.Close ();
 			}
 			catch(Exception ex) {
-			
+				Logger.Fatal ("SendResult", appname, ex.Message);
 			}
 		}
 	}

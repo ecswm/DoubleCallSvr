@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.IO;
+using RpcXmlClient;
 
 namespace HTTP2RPCServer
 {
@@ -39,6 +40,7 @@ namespace HTTP2RPCServer
 			    req = Newtonsoft.Json.JsonConvert.DeserializeObject<VoiceIdentCallAppRequest> (body);
 			}
 			catch(Exception ex) {
+				Logger.Fatal ("ParseJson", "ParseVoiceIdentCallAppRequest", ex.Message);
 			}
 		}
 
@@ -63,7 +65,7 @@ namespace HTTP2RPCServer
 		public override void Execute()
 		{
 			if (req == null) {
-				Logger.Fatal ("RPCThread", AppName, "Revice WebRequest Error,Cause: body is null");
+				Logger.Fatal ("RPCThread", AppName, "Revice WebRequest Error,Cause: parse body is err!!!");
 				Result = GenerateJson ("", "404", "params can not empty");
 				return;
 			}
@@ -72,7 +74,9 @@ namespace HTTP2RPCServer
 			);
 			
 			try{
- 				String[] ret = PythonEnginer.VoiceIdentCall (req.called_number,req.ident_code);
+				RpcEnginer enginer = new RpcEnginer ();
+				string[] ret = enginer.VoiceIdentCall(req.called_number,req.ident_code);
+ 				//String[] ret = PythonEnginer.VoiceIdentCall (req.called_number,req.ident_code);
 				if (ret [0].ToString().Equals ("+OK")) {
 					Result = GenerateJson (ret [1].ToString (), "0", "OK");
 				}

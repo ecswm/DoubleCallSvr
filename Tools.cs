@@ -7,14 +7,40 @@ using System.Security.Cryptography;
 using Newtonsoft.Json;
 using log4net;
 using log4net.Config;
+using RpcXmlClient;
 
 [assembly: log4net.Config.XmlConfigurator(Watch=true)]
 namespace HTTP2RPCServer
 {
 	public static class Tools
 	{
-		static uint keeplived = 5000;
+		
+		static uint keeplived = 3600;
 		static Dictionary<String,String> keymap = new Dictionary<string, string> ();
+
+		public static void InitRpcEnginer()
+		{
+			Logger.Debug ("Tools", "InitRpcEnginer", "init rpcenginer");
+			StreamReader sr;
+			try
+			{
+				sr = new StreamReader("rpc.ini");
+				String keystring;
+				Dictionary<String,String> rpcmap = new Dictionary<string, string>();
+
+				while ((keystring = sr.ReadLine ())!=null) {
+					rpcmap.Add(keystring.Split('=')[0],keystring.Split('=')[1]);
+				}
+				RpcEnginer.proxyurl = rpcmap["url"];
+				RpcEnginer.user = rpcmap["user"];
+				RpcEnginer.pwd = rpcmap.ContainsKey("password")?rpcmap["password"]:rpcmap["pwd"];
+				sr.Close ();
+			}
+			catch(Exception ex) {
+				Logger.Fatal ("Tools", "InitRpcEnginer", "read rpc.ini error,msg is " + ex.Message);
+			}
+		}
+
 		//校验身份
 		public static bool DecodeSigParams(string sigparams,string authorization)
 		{
@@ -39,7 +65,7 @@ namespace HTTP2RPCServer
 				}
 			}
 			catch(Exception ex) {
-				
+				Logger.Fatal ("DecodeSigParams", "MD5CHECKERR", ex.Message);
 			}
 			return ret;
 		}
@@ -48,17 +74,19 @@ namespace HTTP2RPCServer
 		public static void InitSecretKey()
 		{
 			Logger.Debug ("Tools", "InitSecretKey", "init secretkey");
+			StreamReader sr;
 			try
 			{
-			StreamReader sr = new StreamReader ("key.ini");
-			String keystring;
-			while ((keystring = sr.ReadLine ())!=null) {
-					keymap.Add(keystring.Split('=')[0],keystring.Split('=')[1]);
-				}
+				sr = new StreamReader ("key.ini");
+				String keystring;
+				while ((keystring = sr.ReadLine ())!=null) {
+						keymap.Add(keystring.Split('=')[0],keystring.Split('=')[1]);
+					}
+				sr.Close();
 			}
 			catch(Exception ex)
 			{
-				Logger.Fatal ("Tools", "InitSecretKey", "read key.ini error!!!");
+				Logger.Fatal ("Tools", "InitSecretKey", "read key.ini error,msg is " + ex.Message);
 			}
 		}
 
@@ -70,6 +98,7 @@ namespace HTTP2RPCServer
 				return req;
 			}
 			catch(Exception ex) {
+				Logger.Fatal ("ParseJson", "ParseDoubleCallAppRequest", ex.Message);
 				return null;
 			}
 		}

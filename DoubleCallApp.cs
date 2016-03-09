@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using RpcXmlClient;
+using GreenTown.GCLib;
 
 namespace HTTP2RPCServer
 {
@@ -39,6 +41,7 @@ namespace HTTP2RPCServer
 				req = Newtonsoft.Json.JsonConvert.DeserializeObject<DoubleCallAppRequest> (body);
 			}
 			catch(Exception ex) {
+				Logger.Fatal ("ParseJson", "ParseDoubleCallAppRequest", ex.Message);
 			}
 		}
 
@@ -48,10 +51,15 @@ namespace HTTP2RPCServer
 		{
 			req = null;
 			if (ctx.Request.HttpMethod.Equals ("POST")) {
-				 ParseJson(new StreamReader(ctx.Request.InputStream).ReadToEnd());
+				String body = new StreamReader (ctx.Request.InputStream, ctx.Request.ContentEncoding).ReadToEnd();
+				String[] namekeypairs = body.Split ('&');
+				req = new DoubleCallAppRequest ((namekeypairs [0].Split ('=')) [1], (namekeypairs [1].Split ('=')) [1]);
 			}
 			if (ctx.Request.HttpMethod.Equals ("GET")) {
-				req = new DoubleCallAppRequest (ctx.Request.QueryString ["caller_number"], ctx.Request.QueryString ["called_number"]);
+				if (ctx.Request.QueryString ["caller_number"] != null &&
+				    ctx.Request.QueryString ["called_number"] != null) {
+					req = new DoubleCallAppRequest (ctx.Request.QueryString ["caller_number"], ctx.Request.QueryString ["called_number"]);
+				}
 			}
 		}
 
@@ -64,7 +72,7 @@ namespace HTTP2RPCServer
 		public override void Execute()
 		{
 			if (req==null) {
-				Logger.Fatal ("RPCThread", AppName, "Revice WebRequest Error,Cause: body is null");
+				Logger.Fatal ("RPCThread", AppName, "Revice WebRequest Error,Cause: parse body is err!!!");
 				Result = GenerateJson ("", "404", "params can not empty");
 				return;
 			}
@@ -72,7 +80,10 @@ namespace HTTP2RPCServer
 				String.Format("appname: {0},caller_number:{1},called_number:{2}",AppName,req.caller_number,req.called_number)
 			);
 			try{
-				String[] ret = PythonEnginer.OriginateCall (req.caller_number,req.called_number);
+				RpcEnginer enginer = new RpcEnginer ();
+				PhoneNumberProcessor processor = new PhoneNumberProcessor();
+
+				string[] ret = enginer.DoubleCall (processor.ProcessHZ(req.caller_number),processor.ProcessHZ(req.called_number));
 				if (ret [0].ToString().Equals ("+OK")) {
 					Result = GenerateJson (ret [1].ToString (), "0", "OK");
 				}
