@@ -73,7 +73,6 @@
     <Compile Include="Tools.cs" />
     <Compile Include="RPCThread.cs" />
     <Compile Include="Options.cs" />
-    <Compile Include="AuthToken.cs" />
     <Compile Include="IFsApp.cs" />
     <Compile Include="BaseFsApp.cs" />
     <Compile Include="DoubleCallApp.cs" />

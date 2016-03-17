@@ -81,7 +81,6 @@ namespace HTTP2RPCServer
 			);
 			try{
 				RpcEnginer enginer = new RpcEnginer ();
-				//PhoneNumberProcessor processor = new PhoneNumberProcessor();
 
 				string[] ret = enginer.DoubleCall ("9" + req.caller_number,"9" + req.called_number);
 				if (ret [0].ToString().Equals ("+OK")) {

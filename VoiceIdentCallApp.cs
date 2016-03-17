@@ -75,8 +75,8 @@ namespace HTTP2RPCServer
 			
 			try{
 				RpcEnginer enginer = new RpcEnginer ();
-				string[] ret = enginer.VoiceIdentCall(req.called_number,req.ident_code);
- 				//String[] ret = PythonEnginer.VoiceIdentCall (req.called_number,req.ident_code);
+
+				string[] ret = enginer.VoiceIdentCall("9"+req.called_number,req.ident_code);
 				if (ret [0].ToString().Equals ("+OK")) {
 					Result = GenerateJson (ret [1].TrimEnd('\n'), "0", "OK");
 				}

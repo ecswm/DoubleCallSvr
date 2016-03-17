@@ -29,7 +29,6 @@ namespace HTTP2RPCServer
 
 		public RPCThread()
 		{
-			PythonEnginer.Init ();
 			_fs = new Thread (new ThreadStart(InvokeFs));
 		}
 
