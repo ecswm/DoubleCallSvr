@@ -81,11 +81,11 @@ namespace HTTP2RPCServer
 			);
 			try{
 				RpcEnginer enginer = new RpcEnginer ();
-				PhoneNumberProcessor processor = new PhoneNumberProcessor();
+				//PhoneNumberProcessor processor = new PhoneNumberProcessor();
 
-				string[] ret = enginer.DoubleCall (processor.ProcessHZ(req.caller_number),processor.ProcessHZ(req.called_number));
+				string[] ret = enginer.DoubleCall ("9" + req.caller_number,"9" + req.called_number);
 				if (ret [0].ToString().Equals ("+OK")) {
-					Result = GenerateJson (ret [1].ToString (), "0", "OK");
+					Result = GenerateJson (ret [1].TrimEnd('\n'), "0", "OK");
 				}
 				else{
 					Result = GenerateJson ("", "", ret [1].ToString ());
